@@ -1,0 +1,24 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = 'com.nevermind.server.login'
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    baseName = 'checkin-server'
+    version = '0.1'
+    manifest {
+        attributes 'Main-Class': 'com.nevermind.server.login'
+    }
+}
+
+dependencies {
+    compile 'org.mongodb:mongo-java-driver:3.0.1'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.3'
+}

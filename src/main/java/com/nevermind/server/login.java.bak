@@ -1,0 +1,221 @@
+package com.nevermind.server;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.BulkWriteOperation;
+import com.mongodb.BulkWriteResult;
+import com.mongodb.Cursor;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoCredential;
+import com.mongodb.ParallelScanOptions;
+import com.mongodb.ServerAddress;
+
+
+import java.util.List;
+import java.util.Set;
+import java.util.Calendar;
+import java.util.Arrays;
+import java.util.ArrayList;
+
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+
+class Person{
+	private String card_id = "0";
+	private String name = "No Name";
+	private String date;
+	private boolean track1 = false;
+	private boolean track2 = false;
+	private boolean track3 = false;
+
+	public String get_card_id(){ return card_id;}
+	public String get_name() { return name;}
+	public String get_date() {return date;}
+	public boolean get_track1(){ return track1;}
+	public boolean get_track2(){ return track2;}
+	public boolean get_track3(){ return track3;}
+
+	public Person(String current_time, String person_name, String id, boolean t1, boolean t2, boolean t3){
+		date = current_time;
+		name = person_name;
+		card_id = id;
+		track1 = t1;
+		track2 = t2;
+		track3 = t3;
+	}
+}
+
+
+public class login {
+	// TODO: Turn into factory pattern.
+	private SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss");
+	private Date time1, time2, time3, time4;
+
+	public static final DBObject toDBObject(Person person){
+		return new BasicDBObject("_id", person.get_date())
+								.append("name", person.get_name())
+								.append("card id", person.get_card_id())
+								.append("track1", person.get_track1())
+								.append("track2", person.get_track2())
+								.append("track3", person.get_track3());
+	}
+
+	public String[] listen(int portNumber) throws IOException {
+		ServerSocket listener = new ServerSocket(portNumber);
+		String cardId = "", timeStamp = "";
+		StringBuilder body = new StringBuilder();
+		// Raw HTTP requests.
+		String request;
+		String type, path;
+		System.out.println("On port: " + portNumber);
+
+
+		try {
+		    Socket socket = listener.accept();
+		    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		    //BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+		    // read request
+		    String line;
+		    line = in.readLine();
+		    //StringBuilder raw = new StringBuilder();
+		    //aw.append("" + line);
+		    boolean isPost = line.startsWith("POST");
+		    int contentLength = 0;
+		    while (!(line = in.readLine()).equals("")) {
+		        //raw.append('\n' + line);
+		        if (isPost) {
+		            final String contentHeader = "Content-Length: ";
+		            if (line.startsWith(contentHeader)) {
+		                contentLength = Integer.parseInt(line.substring(contentHeader.length()));
+		            }
+		        }
+		    }
+		    body = new StringBuilder();
+		    if (isPost) {
+		    	timeStamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()); 
+		        int c = 0;
+		        for (int i = 0; i < contentLength; i++) {
+		            c = in.read();
+		            body.append((char) c);
+		            //Log.d("JCD", "POST: " + ((char) c) + " " + c);
+		        }
+		    }
+
+		    OutputStream out = socket.getOutputStream();
+		    byte [] response = "Fuck this APP".getBytes("ASCII");
+
+		    String statusLine = "HTTP/1.1 200 OK\r\n";
+            out.write(statusLine.getBytes("ASCII"));
+
+            String contentLength_str = "Content-Length: " + response.length + "\r\n";
+            out.write(contentLength_str.getBytes("ASCII"));
+
+            // signal end of headers
+            out.write( "\r\n".getBytes("ASCII"));
+
+            // write actual response and flush
+            out.write(response);
+            out.flush();
+		    
+		   	out.close();
+		    socket.close();
+		    
+		} finally{
+			listener.close();
+			return new String[] { body.toString(), timeStamp };
+		}	
+	}
+
+	public String compare_time(String time_string) {
+		try {
+			//System.out.println("Insdie compare_time input is: " + time_string);
+			time1 = format.parse("09:00:00");
+			time2 = format.parse("10:00:00");
+			time3 = format.parse("11:00:00");
+			time4 = format.parse("12:00:00");
+
+			return "track1";
+
+			/*
+			Date signup_time = format.parse(time_string.split(" ")[1]);
+			if((signup_time.compareTo(time1) <= 0 && signup_time.compareTo(time2) > 0)) return "track1";
+			else if(signup_time.compareTo(time2) <= 0 && signup_time.compareTo(time3) > 0) return "track2";
+			else if(signup_time.compareTo(time3) <= 0 && signup_time.compareTo(time4) >= 0) return "track3";
+			else return "-1";
+			*/
+		} catch(Exception e) {
+		}
+
+		System.out.println("Exception caught");
+		return "-1";
+	}
+
+    public static void main(String[] args) throws IOException {
+    	// Display application usage.
+    	if (args.length != 1) {
+			System.err.println("Usage: java Adapter <port number>");
+			System.exit(1);
+		}
+
+		// Register the port using the first parameter.
+		int portNumber = Integer.parseInt(args[0]);
+		System.out.println("Port number: " + portNumber);
+
+    	List<ServerAddress> seeds = new ArrayList<ServerAddress>();
+	    seeds.add(new ServerAddress("localhost" , 27017));
+	    //add a credendtial for the seed
+	    List<MongoCredential> credential = new ArrayList();
+	    credential.add( MongoCredential.createCredential("gistaiwan", "signup-sheet-db", "nevermind".toCharArray()));
+
+	   	MongoClient mongoClient = new MongoClient(seeds, credential);
+	   	//creata a preson object to write to the database
+		//Person p1 = new  Person("2015-07-15 00:00:00", "pi_Liu", "0816", false, false, false);
+		DB database =  mongoClient.getDB("signup-sheet-db");
+
+    	while(true){
+    		//receive the login_data from the listener
+    		login handler = new login();
+    		System.out.println("Before listen");
+    		String[] login_data = handler.listen(portNumber);
+    		System.out.println("After listen");
+    		String[] form = login_data[0].split("=");
+    		String key = form[1];
+    		System.out.println("Card ID: " + key + ", Time: " + login_data[1]);
+    		String track = handler.compare_time(key);
+
+    		//query the corresponding collection
+    		//expected to get the d_yyyy-MM-dd format
+    		//DBCollection coll = database.getCollection("d_"+login_data[1].split(" ")[0]);
+    		DBCollection coll = database.getCollection("d_2015_07_13");
+    		DBObject query = new BasicDBObject("card id", key);
+    		DBObject user = coll.findOne(query);
+    		BasicDBObject new_data = new BasicDBObject();
+    		new_data.append("$set", new BasicDBObject().append(track, true));
+    		coll.update(query, new_data);
+	    	//add a seed for the server to connect to
+	    	
+			//DBCollection collection = database.getCollection("d_2015_07_13");
+			//catch the erore when no matching collection is found
+
+			//add data to the database
+			//collection.insert(login.toDBObject(p1));
+
+			
+		}
+		//mongoClient.close();
+    }
+}
