@@ -56,9 +56,8 @@ public class ServerMain {
 		DB database = mongoClient.getDB(credential.getSource());
 	
 		// Start the HTTP server.
-		IncomingListener server = new IncomingListener(portNumber, new IncomingHandler());
+		IncomingListener server = new IncomingListener(portNumber, new IncomingHandler(database));
 		server.start();
-
         System.out.println("Server is started and listening on port "+ portNumber);
 	}
 

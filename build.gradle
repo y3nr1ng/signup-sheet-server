@@ -17,6 +17,7 @@ jar {
 
 dependencies {
     compile 'org.mongodb:mongo-java-driver:3.0.1'
+    compile "com.googlecode.json-simple:json-simple:1.1.1"
 }
 
 task wrapper(type: Wrapper) {
