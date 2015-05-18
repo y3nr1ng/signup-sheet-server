@@ -90,7 +90,6 @@ class TimeCompare {
         }
 }
 
-
 public class login {
 	private SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss");
 	private Date[] time = new Date[4];

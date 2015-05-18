@@ -22,3 +22,8 @@ dependencies {
 task wrapper(type: Wrapper) {
     gradleVersion = '2.3'
 }
+
+run {
+    description = "Run the signup sheet server side listener."
+    args Eval.me("['55006']")
+}
