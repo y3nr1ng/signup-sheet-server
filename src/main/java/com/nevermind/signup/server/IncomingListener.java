@@ -9,6 +9,12 @@ import java.io.IOException;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 
+// Packages for response creator.
+import java.net.URI;
+
+// Packages for using JSONObject.
+import org.json.simple.JSONObject;
+
 public class IncomingListener {
 	private HttpServer server;
 
@@ -34,7 +40,57 @@ public class IncomingListener {
 }
 
 class IncomingHandler implements HttpHandler {
-	public void handle(HttpExchange exchange) throws IOException {
+	private final String AND_DELIMITER = "&";
+	private final String EQUAL_DELIMITER = "=";
+	/*
+	 * Response code
+	 *  201: User successfully signed.
+	 *  304: User already signed.
+	 *  404: Invalid user.
+	 */
+	private final int HTTP_SIGNED = 201;
+	private final int HTTP_RESIGN = 304;
+	private final int HTTP_INVALID = 404;
 
+	public void handle(HttpExchange exchange) throws IOException {
+		// Create a response form the request queried
+		URI uri = exchange.getRequestURI();
+		String method = exchange.getRequestMethod();
+
+		String response = createResponseFromQuery(method, uri);
+		System.err.println("Response: " + response);
+	}
+
+	private String createResponseFromQuery(String method, URI uri) {
+		String rawQuery = uri.getQuery();
+
+		// Return empty string if the request don't generate query.
+		if (rawQuery == null) {
+			return "";
+		}
+
+		System.err.println("Query: " + rawQuery);
+		String[] queries = rawQuery.split(AND_DELIMITER);
+
+		// Return empty string if nothing inside the query.
+		if(queries.length == 0)
+			return "";
+
+		for(String query : queries) {
+			String[] parameters = query.split(EQUAL_DELIMITER);
+			if(parameters.length > 0) {
+				for(int i = 0; i < parameters.length; i++) {
+
+				}
+			}
+		}
+	}
+
+	private String getUserInfo(String cardId) {
+		JSONObject response = new JSONObject();
+
+		
+		
+		return response.toString();
 	}
 }
