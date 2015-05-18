@@ -13,6 +13,9 @@ import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import java.util.Arrays;
 
+// packages for MongoDB access.
+import com.mongodb.DB;
+
 public class ServerMain {
 	final private static String databasePropertyFile = "database.properties";
 
@@ -21,6 +24,7 @@ public class ServerMain {
 	 *  1:	Incorrect CLI argument.
 	 *	2:	Can't interpret the port number.
 	 *	3: 	Can't load database properties.
+	 *	4: 	Having trouble initiate the HTTP server.
 	 */
 	public static void main(String[] args) {
 		if (args.length != 1) {
@@ -47,7 +51,9 @@ public class ServerMain {
 			System.exit(3);
 		}
 
-		MongoClient MongoClient = new MongoClient(seed, Arrays.asList(credential));
+		// Create the client and establish the connection.
+		MongoClient mongoClient = new MongoClient(seed, Arrays.asList(credential));
+		DB database = mongoClient.getDB(credential.getSource());
 	}
 
 	private static ServerAddress readConnectionInfoFromFile() throws IOException, FileNotFoundException {
