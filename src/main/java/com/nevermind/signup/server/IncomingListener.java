@@ -62,12 +62,13 @@ class IncomingHandler implements HttpHandler {
 
 
 		// TODO: set the status
+		Byte[] responseContent = response.getBytes();
 		//Set the response header status and length
-        exchange.sendResponseHeaders(HTTP_OK_STATUS, response.getBytes().length);
+        exchange.sendResponseHeaders(HTTP_OK_STATUS, responseContent.length);
         //Write the response string
-        OutputStream os = t.getResponseBody();
-        os.write(response.getBytes());
-        os.close();
+        OutputStream output = exchange.getResponseBody();
+        output.write(responseContent);
+        output.close();
 
 	}
 
