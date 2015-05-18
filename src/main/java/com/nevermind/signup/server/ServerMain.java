@@ -37,7 +37,7 @@ public class ServerMain {
 		if (portNumber != 0) {
 			System.err.println("Open port on " + portNumber + ".");
 		} else {
-			System.err.println("Can't open the port.");
+			System.err.println("Can't parse the port.");
 			System.exit(2);
 		}
 
@@ -54,6 +54,12 @@ public class ServerMain {
 		// Create the client and establish the connection.
 		MongoClient mongoClient = new MongoClient(seed, Arrays.asList(credential));
 		DB database = mongoClient.getDB(credential.getSource());
+	
+		// Start the HTTP server.
+		IncomingListener server = new IncomingListener(portNumber, new IncomingHandler());
+		server.start();
+
+        System.out.println("Server is started and listening on port "+ portNumber);
 	}
 
 	private static ServerAddress readConnectionInfoFromFile() throws IOException, FileNotFoundException {

@@ -9,7 +9,7 @@ import java.io.IOException;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 
-// Packages for response creator.
+// Packages for response creator and sender.
 import java.net.URI;
 
 // Packages for using JSONObject.
@@ -59,6 +59,16 @@ class IncomingHandler implements HttpHandler {
 
 		String response = createResponseFromQuery(method, uri);
 		System.err.println("Response: " + response);
+
+
+		// TODO: set the status
+		//Set the response header status and length
+        exchange.sendResponseHeaders(HTTP_OK_STATUS, response.getBytes().length);
+        //Write the response string
+        OutputStream os = t.getResponseBody();
+        os.write(response.getBytes());
+        os.close();
+
 	}
 
 	private String createResponseFromQuery(String method, URI uri) {
@@ -84,13 +94,19 @@ class IncomingHandler implements HttpHandler {
 				}
 			}
 		}
+
+		// Parse the parameters to map
+
+		// Send the map to different functions according to method
+
+		// Return the response
 	}
 
 	private String getUserInfo(String cardId) {
 		JSONObject response = new JSONObject();
 
-		
-		
+
+
 		return response.toString();
 	}
 }
