@@ -19,14 +19,14 @@ public class CompareTime {
 		public Date start;
 		public Date end;
 
-		public TimeRange(Date _start, Date _end) {
-			start = _start;
-			end = _end;
+		public TimeRange(Date start, Date end) {
+			this.start = start;
+			this.end = end;
 		}
-		public TimeRange(String _start, String _end) {
+		public TimeRange(String start, String end) {
 			try {
-				start = format.parse(_start);
-				end = format.parse(_end);
+				this.start = format.parse(start);
+				this.end = format.parse(end);
 			} catch (ParseException e) {
 				System.err.println("class TimeRange: Having trouble parsing the input.");
 			}
@@ -55,7 +55,7 @@ public class CompareTime {
 		lookup.put(new TimeRange("2015-05-17 10:20:00", "2015-05-17 11:20:00"), "track3");
 	}
 
-	public String getTrack(String currentTimestamp) throws ParseException {
+	public String getCollectionName(String currentTimestamp) throws ParseException {
 		Date currentTime = format.parse(currentTimestamp);
 		for (TimeRange range : lookup.keySet()) {
 			if (currentTime.after(range.start) && currentTime.before(range.end)) {
@@ -74,7 +74,7 @@ class TimeCompareDemo {
 
 		System.out.println("Current time is " + data);
 		try {
-			System.out.println("-> " + compare.getTrack(data));
+			System.out.println("-> " + compare.getCollectionName(data));
 		} catch (ParseException e) {
 			System.err.println("main: Format error in \"data\"...");
 			System.err.println(e.getMessage());
