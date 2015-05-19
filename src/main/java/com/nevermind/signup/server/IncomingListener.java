@@ -16,11 +16,11 @@ import java.io.OutputStream;
 import java.text.ParseException;
 
 // Packages for MongoDB access.
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
 import java.util.List;
+import static com.mongodb.client.model.Filters.*;
 
 // Packages for using JSONObject.
 import org.json.simple.JSONObject;
@@ -83,14 +83,13 @@ class IncomingHandler implements HttpHandler {
 		}
 	}
 
-	private DB database = null;
+	private MongoDatabase database = null;
 
 	// Create the signed document schema.
-	private final BasicDBObject signDocument = new BasicDBObject().append("$set",
-	        new BasicDBObject().append("signed", true));
+	private final Document signDocument = new Document("$set", new Document("signed", true));
 
 	// Pass the database object through the constructor.
-	public IncomingHandler(DB database) {
+	public IncomingHandler(MongoDatabase database) {
 		this.database = database;
 	}
 
@@ -183,25 +182,19 @@ class IncomingHandler implements HttpHandler {
 		JSONObject content = new JSONObject();
 
 		// Get the track by time.
-		DBCollection collection = database.getCollection("user");
+		MongoCollection<Document> collection = database.getCollection("user");
 
-		// Create card ID search object.
-		BasicDBObject queryCard = new BasicDBObject("card_id", cardId);
-
-		if (collection.find(queryCard).count() == 0) {
+		if (collection.count(eq("card_id", cardId)) == 0) {
 			// Card ID doesn't exist.
 			response.status = HTTP_INVALID;
 		} else {
 			// Get user info from the collection.
-			List<DBObject> users = collection.find(queryCard).toArray();
-			if (users.size() > 1) {
-				System.err.println("Duplicate card ID found, using the first one.");
-			}
+			Document users = collection.find(eq("card_id", cardId)).first();
 
 			// Get the fields.
-			String firstName = (String)users.get(0).get("first_name");
-			String lastName = (String)users.get(0).get("last_name");
-			String avatar = (String)users.get(0).get("avatar");
+			String firstName = users.getString("first_name");
+			String lastName = users.getString("last_name");
+			String avatar = users.getString("avatar");
 
 			// Create the JSON object.
 			content.put("first_name", firstName);
@@ -234,31 +227,24 @@ class IncomingHandler implements HttpHandler {
 		*/
 
 		// Bypass collection name.
-		String collectionName = "d-2015-05-17-track1";
+		String collectionName = "d-2015-05-17-track2";
 		
-		DBCollection collection = database.getCollection(collectionName);
+		MongoCollection<Document> collection = database.getCollection(collectionName);
 
-		// Create card ID search object.
-		BasicDBObject queryCard = new BasicDBObject("card_id", cardId);
-
-		if (collection.find(queryCard).count() == 0) {
+		if (collection.count(eq("card_id", cardId)) == 0) {
 			// Card ID doesn't exist.
 			response.status = HTTP_INVALID;
 		} else {
-			if (collection.find(queryCard.append("signed", true)).count() == 1) {
+			if (collection.count(and(eq("card_id", cardId), eq("signed", true))) == 1) {
 				// Specified card is already signed.
 				response.status = HTTP_RESIGN;
 			} else {
-				// Remove the signed check from previous operation.
-				queryCard.removeField("signed");
-
 				// Create the date schema.
-				BasicDBObject date = new BasicDBObject().append("$set",
-				        new BasicDBObject().append("date", timestamp));
+				Document date = new Document("$set", new Document("date", timestamp));
 
 				// Update the document.
-				collection.update(queryCard, signDocument);
-				collection.update(queryCard, date);
+				collection.updateOne(eq("card_id", cardId), signDocument);
+				collection.updateOne(eq("card_id", cardId), date);
 
 				response.status = HTTP_SIGNED;
 			}

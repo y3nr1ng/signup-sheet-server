@@ -1,6 +1,7 @@
 package com.nevermind.signup.server;
 
 // Packages for reading property files.
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,7 +15,7 @@ import com.mongodb.ServerAddress;
 import java.util.Arrays;
 
 // packages for MongoDB access.
-import com.mongodb.DB;
+import com.mongodb.client.MongoDatabase;
 
 public class ServerMain {
 	final private static String databasePropertyFile = "database.properties";
@@ -53,12 +54,12 @@ public class ServerMain {
 
 		// Create the client and establish the connection.
 		MongoClient mongoClient = new MongoClient(seed, Arrays.asList(credential));
-		DB database = mongoClient.getDB(credential.getSource());
-	
+		MongoDatabase database = mongoClient.getDatabase(credential.getSource());
+
 		// Start the HTTP server.
 		IncomingListener server = new IncomingListener(portNumber, new IncomingHandler(database));
 		server.start();
-        System.out.println("Server is started and listening on port "+ portNumber);
+		System.out.println("Server is started and listening on port " + portNumber);
 	}
 
 	private static ServerAddress readConnectionInfoFromFile() throws IOException, FileNotFoundException {
@@ -92,10 +93,16 @@ public class ServerMain {
 		Properties properties = new Properties();
 		InputStream input = null;
 
-		input = ServerMain.class.getClassLoader().getResourceAsStream(databasePropertyFile);
-		if (input == null) {
-			System.err.println("Unable to find \"" + databasePropertyFile + "\".");
-			throw new FileNotFoundException();
+		// Check if file exists, otherwise, use the default setup.
+		File customProperties = new File(databasePropertyFile);
+		if (customProperties.exists()) {
+			input = new FileInputStream(databasePropertyFile);
+		} else {
+			input = ServerMain.class.getClassLoader().getResourceAsStream(databasePropertyFile);
+			if (input == null) {
+				System.err.println("Unable to find \"" + databasePropertyFile + "\".");
+				throw new FileNotFoundException();
+			}
 		}
 
 		// Load the property file.

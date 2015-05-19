@@ -28,3 +28,9 @@ run {
     description = "Run the signup sheet server side listener."
     args Eval.me("['55006']")
 }
+
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint"
+    }
+}
