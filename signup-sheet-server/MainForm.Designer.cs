@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.statusStrip = new System.Windows.Forms.StatusStrip();
             this.applicationStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.serverAddress = new System.Windows.Forms.ToolStripStatusLabel();
@@ -103,14 +104,14 @@
             // newSignupSheet
             // 
             this.newSignupSheet.Name = "newSignupSheet";
-            this.newSignupSheet.Size = new System.Drawing.Size(152, 22);
+            this.newSignupSheet.Size = new System.Drawing.Size(143, 22);
             this.newSignupSheet.Text = "Signup Sheet";
             this.newSignupSheet.Click += new System.EventHandler(this.newSignupSheet_Click);
             // 
             // newUserList
             // 
             this.newUserList.Name = "newUserList";
-            this.newUserList.Size = new System.Drawing.Size(152, 22);
+            this.newUserList.Size = new System.Drawing.Size(143, 22);
             this.newUserList.Text = "User List";
             this.newUserList.Click += new System.EventHandler(this.newUserList_Click);
             // 
@@ -215,6 +216,7 @@
             this.Controls.Add(this.displayRegion);
             this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.menuStrip);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
