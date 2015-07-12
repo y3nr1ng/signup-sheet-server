@@ -1,0 +1,36 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = 'com.nevermind.signup.server.ServerMain'
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    baseName = 'checkin-server'
+    version = '0.1'
+    manifest {
+        attributes 'Main-Class': 'com.nevermind.signup.server.ServerMain'
+    }
+}
+
+dependencies {
+    compile 'org.mongodb:mongo-java-driver:3.0.1'
+    compile "com.googlecode.json-simple:json-simple:1.1.1"
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.3'
+}
+
+run {
+    description = "Run the signup sheet server side listener."
+    args Eval.me("['55006']")
+}
+
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint"
+    }
+}
