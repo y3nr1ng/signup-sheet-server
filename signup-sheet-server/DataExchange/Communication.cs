@@ -129,8 +129,14 @@ namespace signup_sheet_server.DataExchange
 
             // Acquire the user info.
             UserInfo user = (parent as MainForm).GetUserInfo(data);
+
+            // Packing the message.
+            State newMessage = new State();
             if(user != null)
             {
+                // A valid user.
+                newMessage.Valid = true;
+
                 string name = user.FirstName + ' ' + user.LastName;
 
                 // Perform the signup (cross thread invoke).
@@ -138,13 +144,17 @@ namespace signup_sheet_server.DataExchange
                 //(this.parent as MainForm).Signup(name);
                 (this.parent as MainForm).Invoke((MethodInvoker)(() => (this.parent as MainForm).Signup(name)));
 
-                // Pack the information in JSON format.
-                data = JsonConvert.SerializeObject(user);
+                // Add the UserInfo payload.
+                newMessage.User = user;
             }
             else
             {
-                data = string.Empty;
+                // An invalid user.
+                newMessage.Valid = false;
             }
+
+            // Pack the information in JSON format.
+            data = JsonConvert.SerializeObject(newMessage);
 
             // Send the data back to the client.
             byte[] sendBytes = Encoding.ASCII.GetBytes(data);
@@ -153,6 +163,42 @@ namespace signup_sheet_server.DataExchange
 
             // Continue pulling the data from the stream.
             WaitForRequest();
+        }
+    }
+
+    public class State
+    {
+        [JsonProperty("valid")]
+        private bool valid = true;
+        [JsonIgnore]
+        public bool Valid
+        {
+            set
+            {
+                this.valid = value;
+            }
+        }
+
+        [JsonProperty("due")]
+        private bool due = false;
+        [JsonIgnore]
+        public bool Due
+        {
+            set
+            {
+                this.due = value;
+            }
+        }
+
+        [JsonProperty("user")]
+        private UserInfo user;
+        [JsonIgnore]
+        public UserInfo User
+        {
+            set
+            {
+                this.user = value;
+            }
         }
     }
 }

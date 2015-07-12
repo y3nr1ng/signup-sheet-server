@@ -196,6 +196,7 @@ namespace signup_sheet_server.Panels
             {
                 if(user.CardId == cardId)
                 {
+                    // Since the callee of this is in another thread, invoke delegate is needed.
                     this.BeginInvoke(new InvokeDelegate(SelectUser));
                     this.cardIdTransporter = cardId;
                     return user;
