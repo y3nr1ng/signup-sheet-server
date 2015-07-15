@@ -2,6 +2,7 @@
 using signup_sheet_server.Panels;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -80,7 +81,7 @@ namespace signup_sheet_server.DataExchange
 
         #endregion
     }
-    
+
     class ClientHandler
     {
         private TcpClient clientSocket;
@@ -99,7 +100,7 @@ namespace signup_sheet_server.DataExchange
             this.networkStream = this.clientSocket.GetStream();
             WaitForRequest();
         }
-        
+
         public void WaitForRequest()
         {
             byte[] buffer = new byte[this.clientSocket.ReceiveBufferSize];
@@ -110,59 +111,72 @@ namespace signup_sheet_server.DataExchange
         {
             NetworkStream networkStream = this.clientSocket.GetStream();
 
-            int read = networkStream.EndRead(result);
-            // End of the transmission, close everything.
-            if(read == 0)
+            try
             {
+                int read = networkStream.EndRead(result);
+                // End of the transmission, close everything.
+                if(read == 0)
+                {
+                    this.networkStream.Close();
+                    this.clientSocket.Close();
+                    return;
+                }
+
+                // Decode the content based on default encoding.
+                byte[] buffer = result.AsyncState as byte[];
+                string data = Encoding.Default.GetString(buffer, 0, read);
+
+                // Remove unwanted newline characters.
+                data = System.Text.RegularExpressions.Regex.Replace(data, @"\t|\n|\r", "");
+                Console.WriteLine("Receive card ID: " + data);
+
+                // Acquire the user info.
+                UserInfo user = (parent as MainForm).GetUserInfo(data);
+
+                // Packing the message.
+                State newMessage = new State();
+                if(user != null)
+                {
+                    // A valid user.
+                    newMessage.Valid = true;
+
+                    string name = user.FirstName + ' ' + user.LastName;
+
+                    // Perform the signup (cross thread invoke).
+                    // Since this is a cross thread call, need to invoke the function through MethodInvoker.
+                    //(this.parent as MainForm).Signup(name);
+                    (this.parent as MainForm).Invoke((MethodInvoker)(() => (this.parent as MainForm).Signup(name)));
+
+                    // Assume not due.
+                    newMessage.Due = false;
+
+                    // Add the UserInfo payload.
+                    newMessage.User = user;
+                }
+                else
+                {
+                    // An invalid user.
+                    newMessage.Valid = false;
+                }
+
+                // Pack the information in JSON format.
+                data = JsonConvert.SerializeObject(newMessage);
+
+                // Send the data back to the client.
+                byte[] sendBytes = Encoding.ASCII.GetBytes(data);
+                networkStream.Write(sendBytes, 0, sendBytes.Length);
+                networkStream.Flush();
+
+                // Continue pulling the data from the stream.
+                WaitForRequest();
+            }
+            catch(IOException)
+            {
+                // Client lost connection.
                 this.networkStream.Close();
                 this.clientSocket.Close();
                 return;
             }
-
-            // Decode the content based on default encoding.
-            byte[] buffer = result.AsyncState as byte[];
-            string data = Encoding.Default.GetString(buffer, 0, read);
-
-            // Remove unwanted newline characters.
-            data = System.Text.RegularExpressions.Regex.Replace(data, @"\t|\n|\r", "");
-            Console.WriteLine("Receive card ID: " + data);
-
-            // Acquire the user info.
-            UserInfo user = (parent as MainForm).GetUserInfo(data);
-
-            // Packing the message.
-            State newMessage = new State();
-            if(user != null)
-            {
-                // A valid user.
-                newMessage.Valid = true;
-
-                string name = user.FirstName + ' ' + user.LastName;
-
-                // Perform the signup (cross thread invoke).
-                // Since this is a cross thread call, need to invoke the function through MethodInvoker.
-                //(this.parent as MainForm).Signup(name);
-                (this.parent as MainForm).Invoke((MethodInvoker)(() => (this.parent as MainForm).Signup(name)));
-
-                // Add the UserInfo payload.
-                newMessage.User = user;
-            }
-            else
-            {
-                // An invalid user.
-                newMessage.Valid = false;
-            }
-
-            // Pack the information in JSON format.
-            data = JsonConvert.SerializeObject(newMessage);
-
-            // Send the data back to the client.
-            byte[] sendBytes = Encoding.ASCII.GetBytes(data);
-            networkStream.Write(sendBytes, 0, sendBytes.Length);
-            networkStream.Flush();
-
-            // Continue pulling the data from the stream.
-            WaitForRequest();
         }
     }
 
